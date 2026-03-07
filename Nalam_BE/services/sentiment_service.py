@@ -1,51 +1,41 @@
 """
-Sentiment Analysis Service — HuggingFace distilbert.
-Runs in parallel with LLM call on every user message.
+Sentiment Analysis Service — Gemini-based sentiment detection.
 """
 import os
-import requests
 from dotenv import load_dotenv
+import google.generativeai as genai
 
 load_dotenv()
 
-HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY", "")
-MODEL_URL = "https://api-inference.huggingface.co/models/distilbert-base-uncased-finetuned-sst-2-english"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
 
 
 async def get_sentiment(message: str) -> float:
     """
-    Analyze sentiment of a message using HuggingFace Inference API.
-    Returns a score between 0 (very negative) and 1 (very positive).
+    Analyze sentiment using Gemini.
+    Returns score 0 (negative) to 1 (positive).
     """
-    if not HUGGINGFACE_API_KEY:
+    if not GEMINI_API_KEY:
         return _fallback_sentiment(message)
 
     try:
-        response = requests.post(
-            MODEL_URL,
-            headers={"Authorization": f"Bearer {HUGGINGFACE_API_KEY}"},
-            json={"inputs": message},
-            timeout=5,
+        model = genai.GenerativeModel("gemini-2.5-flash-preview-05-20")
+        response = model.generate_content(
+            f"Rate sentiment 0-1 (0=very negative, 1=very positive). Reply ONLY with number: {message}",
+            generation_config=genai.types.GenerationConfig(max_output_tokens=10, temperature=0)
         )
-
-        if response.status_code == 200:
-            result = response.json()
-            if isinstance(result, list) and len(result) > 0:
-                scores = result[0]
-                # Find POSITIVE label score
-                for item in scores:
-                    if item["label"] == "POSITIVE":
-                        return round(item["score"], 3)
-                    elif item["label"] == "NEGATIVE":
-                        return round(1 - item["score"], 3)
-        return 0.5
+        score = float(response.text.strip())
+        return round(max(0, min(1, score)), 3)
     except Exception as e:
         print(f"[Sentiment] Error: {e}")
         return _fallback_sentiment(message)
 
 
 def _fallback_sentiment(message: str) -> float:
-    """Simple keyword-based sentiment fallback."""
+    """Keyword-based fallback."""
     positive = ["happy", "good", "great", "better", "okay", "fine", "grateful", "excited", "glad"]
     negative = ["sad", "anxious", "stressed", "worried", "depressed", "scared", "angry",
                 "hopeless", "tired", "exhausted", "lonely", "overwhelmed", "numb"]
@@ -60,7 +50,7 @@ def _fallback_sentiment(message: str) -> float:
 
 
 def sentiment_to_avatar_state(score: float) -> str:
-    """Map sentiment score to avatar mood state."""
+    """Map sentiment to avatar state."""
     if score >= 0.6:
         return "happy"
     if score >= 0.4:
