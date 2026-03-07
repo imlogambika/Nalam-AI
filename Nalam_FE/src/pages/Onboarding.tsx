@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp, AvatarStyle, Language, MoodDefault } from "@/contexts/AppContext";
 import nalamLogo from "@/assets/nalam-logo.png";
-import { ArrowRight, Shield, Lock, Heart } from "lucide-react";
+import { ArrowRight, Shield, Lock, Heart, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { createSession, createAvatar } from "@/services/api";
 
 const avatarStyles: { value: AvatarStyle; label: string; emoji: string }[] = [
   { value: "minimalist", label: "Minimalist", emoji: "◯" },
@@ -34,16 +35,51 @@ const Onboarding = () => {
   const [selectedStyle, setSelectedStyle] = useState<AvatarStyle>(state.avatarStyle);
   const [selectedMood, setSelectedMood] = useState<MoodDefault>(state.defaultMood);
   const [selectedLang, setSelectedLang] = useState<Language>(state.language);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleStart = () => {
-    setState((prev) => ({
-      ...prev,
-      avatarStyle: selectedStyle,
-      defaultMood: selectedMood,
-      language: selectedLang,
-    }));
-    completeOnboarding();
-    navigate("/chat");
+  const handleStart = async () => {
+    setIsLoading(true);
+
+    try {
+      // Step 1: Create session via API
+      const sessionResponse = await createSession(selectedLang);
+      const sessionId = sessionResponse.session_id;
+
+      // Step 2: Create avatar via API
+      const avatarResponse = await createAvatar({
+        session_id: sessionId,
+        style: selectedStyle,
+        skin_tone: state.skinTone,
+        default_mood: selectedMood,
+        language: selectedLang,
+      });
+
+      // Update state with API response
+      setState((prev) => ({
+        ...prev,
+        sessionId: sessionId,
+        avatarId: avatarResponse.avatar_id,
+        avatarStyle: selectedStyle,
+        defaultMood: selectedMood,
+        language: selectedLang,
+      }));
+
+      completeOnboarding();
+      navigate("/chat");
+    } catch (error) {
+      console.error("Onboarding API error:", error);
+      // Fallback: use local session ID and continue
+      setState((prev) => ({
+        ...prev,
+        avatarStyle: selectedStyle,
+        defaultMood: selectedMood,
+        language: selectedLang,
+      }));
+      completeOnboarding();
+      navigate("/chat");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -149,10 +185,20 @@ const Onboarding = () => {
         {/* Start Button */}
         <Button
           onClick={handleStart}
-          className="w-full py-6 text-base rounded-xl bg-primary text-primary-foreground font-display font-bold shadow-card hover:shadow-elevated transition-all duration-200"
+          disabled={isLoading}
+          className="w-full py-6 text-base rounded-xl bg-primary text-primary-foreground font-display font-bold shadow-card hover:shadow-elevated transition-all duration-200 disabled:opacity-70"
           style={{ animation: "slideUp 0.7s ease-out" }}
         >
-          Get Started <ArrowRight className="ml-2" size={18} />
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 animate-spin" size={18} />
+              Setting up...
+            </>
+          ) : (
+            <>
+              Get Started <ArrowRight className="ml-2" size={18} />
+            </>
+          )}
         </Button>
       </div>
     </div>

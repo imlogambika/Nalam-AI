@@ -6,6 +6,7 @@ export type MoodDefault = "happy" | "neutral" | "sad";
 
 interface AppState {
   sessionId: string;
+  avatarId: string;
   avatarStyle: AvatarStyle;
   skinTone: number;
   defaultMood: MoodDefault;
@@ -13,16 +14,20 @@ interface AppState {
   onboarded: boolean;
   phqScore: number;
   gadScore: number;
+  severity: string;
+  avatarState: string;
 }
 
 interface AppContextType {
   state: AppState;
   setState: React.Dispatch<React.SetStateAction<AppState>>;
   completeOnboarding: () => void;
+  updateScores: (phq: number, gad: number, severity: string) => void;
 }
 
 const defaultState: AppState = {
   sessionId: `sess_${Math.random().toString(36).substring(2, 9)}`,
+  avatarId: "",
   avatarStyle: "geometric",
   skinTone: 2,
   defaultMood: "neutral",
@@ -30,6 +35,8 @@ const defaultState: AppState = {
   onboarded: false,
   phqScore: 0,
   gadScore: 0,
+  severity: "minimal",
+  avatarState: "calm",
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -41,8 +48,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setState((prev) => ({ ...prev, onboarded: true }));
   };
 
+  const updateScores = (phq: number, gad: number, severity: string) => {
+    setState((prev) => ({ ...prev, phqScore: phq, gadScore: gad, severity }));
+  };
+
   return (
-    <AppContext.Provider value={{ state, setState, completeOnboarding }}>
+    <AppContext.Provider value={{ state, setState, completeOnboarding, updateScores }}>
       {children}
     </AppContext.Provider>
   );

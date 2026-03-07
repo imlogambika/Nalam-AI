@@ -1,0 +1,12 @@
+fastapi==0.115.0
+uvicorn==0.27.0
+supabase==2.3.0
+langfuse==2.7.0
+google-generativeai==0.8.3
+requests==2.32.3
+python-dotenv==1.0.0
+pydantic==2.5.0
+httpx==0.26.0
+python-multipart==0.0.18
+PyPDF2==3.0.1
+pgvector==0.2.4
