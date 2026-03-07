@@ -1,0 +1,239 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root,
+  .dark {
+    /* Bioluminescent Ocean Theme — Dark */
+    --background: 220 50% 7%;
+    --foreground: 192 50% 93%;
+
+    --card: 220 45% 10%;
+    --card-foreground: 192 50% 93%;
+
+    --popover: 220 45% 10%;
+    --popover-foreground: 192 50% 93%;
+
+    --primary: 164 100% 42%;
+    --primary-foreground: 220 50% 7%;
+
+    --secondary: 215 55% 15%;
+    --secondary-foreground: 192 50% 93%;
+
+    --muted: 220 30% 15%;
+    --muted-foreground: 200 15% 55%;
+
+    --accent: 37 90% 55%;
+    --accent-foreground: 220 50% 7%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --info: 214 100% 65%;
+    --info-foreground: 220 50% 7%;
+
+    --border: 215 30% 18%;
+    --input: 215 30% 18%;
+    --ring: 164 100% 42%;
+
+    --radius: 1rem;
+
+    /* Custom tokens */
+    --glow-primary: 164 100% 42%;
+    --glow-accent: 37 90% 55%;
+    --glow-info: 214 100% 65%;
+    --gradient-ocean-start: 220 50% 7%;
+    --gradient-ocean-end: 215 45% 12%;
+
+    --sidebar-background: 220 45% 8%;
+    --sidebar-foreground: 192 50% 93%;
+    --sidebar-primary: 164 100% 42%;
+    --sidebar-primary-foreground: 220 50% 7%;
+    --sidebar-accent: 215 55% 15%;
+    --sidebar-accent-foreground: 192 50% 93%;
+    --sidebar-border: 215 30% 18%;
+    --sidebar-ring: 164 100% 42%;
+
+    --shadow-card: 0 4px 24px -4px hsl(220 50% 3% / 0.5), 0 0 0 1px hsl(192 50% 93% / 0.03);
+    --shadow-card-hover: 0 8px 40px -8px hsl(164 100% 42% / 0.2), 0 0 0 1px hsl(164 100% 42% / 0.08);
+    --shadow-elevated: 0 12px 48px -12px hsl(220 50% 3% / 0.6), 0 0 20px hsl(164 100% 42% / 0.05);
+    --shadow-button: 0 0 20px hsl(164 100% 42% / 0.3), 0 2px 8px hsl(220 50% 3% / 0.3);
+    --shadow-button-hover: 0 0 40px hsl(164 100% 42% / 0.5), 0 4px 16px hsl(220 50% 3% / 0.3);
+  }
+
+  .light {
+    /* Serene Light Theme */
+    --background: 200 30% 97%;
+    --foreground: 220 30% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 30% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 30% 15%;
+
+    --primary: 164 80% 36%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 200 20% 93%;
+    --secondary-foreground: 220 30% 25%;
+
+    --muted: 200 15% 92%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 37 85% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --info: 214 80% 52%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 200 15% 85%;
+    --input: 200 15% 85%;
+    --ring: 164 80% 36%;
+
+    --radius: 1rem;
+
+    --glow-primary: 164 80% 36%;
+    --glow-accent: 37 85% 50%;
+    --glow-info: 214 80% 52%;
+    --gradient-ocean-start: 200 30% 97%;
+    --gradient-ocean-end: 200 25% 94%;
+
+    --sidebar-background: 200 20% 96%;
+    --sidebar-foreground: 220 30% 15%;
+    --sidebar-primary: 164 80% 36%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 200 20% 93%;
+    --sidebar-accent-foreground: 220 30% 25%;
+    --sidebar-border: 200 15% 85%;
+    --sidebar-ring: 164 80% 36%;
+
+    --shadow-card: 0 1px 3px hsl(220 30% 15% / 0.06), 0 4px 16px hsl(220 30% 15% / 0.04);
+    --shadow-card-hover: 0 4px 24px hsl(164 80% 36% / 0.1), 0 1px 4px hsl(220 30% 15% / 0.06);
+    --shadow-elevated: 0 8px 32px hsl(220 30% 15% / 0.08), 0 2px 8px hsl(220 30% 15% / 0.04);
+    --shadow-button: 0 2px 8px hsl(164 80% 36% / 0.2), 0 1px 3px hsl(220 30% 15% / 0.06);
+    --shadow-button-hover: 0 4px 20px hsl(164 80% 36% / 0.3), 0 2px 8px hsl(220 30% 15% / 0.08);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+    min-height: 100vh;
+    transition: background-color 0.4s ease, color 0.3s ease;
+  }
+
+  .dark body,
+  :root body {
+    background: linear-gradient(165deg, hsl(220, 50%, 7%) 0%, hsl(215, 45%, 12%) 50%, hsl(220, 40%, 9%) 100%);
+  }
+
+  .light body {
+    background: linear-gradient(165deg, hsl(200, 30%, 97%) 0%, hsl(200, 25%, 94%) 50%, hsl(200, 30%, 97%) 100%);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply relative rounded-2xl border border-border/50 backdrop-blur-xl;
+    background: hsl(var(--card) / 0.6);
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.4s ease, border-color 0.3s ease, transform 0.3s ease;
+  }
+
+  .glass-card-glow {
+    @apply glass-card;
+  }
+
+  .glass-card-glow:hover {
+    box-shadow: var(--shadow-card-hover);
+    border-color: hsl(var(--primary) / 0.2);
+    transform: translateY(-2px);
+  }
+
+  .glow-text {
+    text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+  }
+
+  .light .glow-text {
+    text-shadow: none;
+  }
+
+  .btn-glow {
+    @apply relative overflow-hidden rounded-2xl bg-primary text-primary-foreground font-semibold transition-all duration-300;
+    box-shadow: var(--shadow-button);
+  }
+
+  .btn-glow:hover {
+    box-shadow: var(--shadow-button-hover);
+    transform: translateY(-1px);
+  }
+
+  .btn-glow:active {
+    transform: translateY(0);
+  }
+
+  .metric-ring {
+    @apply rounded-full;
+    box-shadow: 0 0 15px hsl(var(--primary) / 0.3);
+  }
+
+  .breathing-bg {
+    animation: breathe 8s ease-in-out infinite;
+  }
+
+  .pulse-soft {
+    animation: pulseSoft 3s ease-in-out infinite;
+  }
+
+  .float-gentle {
+    animation: floatGentle 6s ease-in-out infinite;
+  }
+
+  /* Professional card elevations */
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .shadow-card-hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+}
+
+@keyframes pulseSoft {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes floatGentle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes particleDrift {
+  0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-10vh) translateX(30px); opacity: 0; }
+}
