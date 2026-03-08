@@ -22,10 +22,22 @@ type Message = {
   type?: "text" | "coping" | "crisis";
 };
 
+const languageGreetings: Record<string, string> = {
+  en: "Hi there 🌿 I'm Nalam, your mental health companion. How are you feeling today?",
+  hi: "नमस्ते 🌿 मैं नालम हूं, आपका मानसिक स्वास्थ्य साथी। आज आप कैसा महसूस कर रहे हैं?",
+  ta: "வணக்கம் 🌿 நான் நலம், உங்கள் மனநல துணை. இன்று நீங்கள் எப்படி உணர்கிறீர்கள்?",
+  te: "నమస్కారం 🌿 నేను నాలం, మీ మానసిక ఆరోగ్య సహచరుడను. ఈరోజు మీరు ఎలా ఉన్నారు?",
+  bn: "নমস্কার 🌿 আমি নালাম, আপনার মানসিক স্বাস্থ্য সঙ্গী। আজ আপনি কেমন অনুভব করছেন?",
+  kn: "ನಮಸ್ಕಾರ 🌿 ನಾನು ನಲಂ, ನಿಮ್ಮ ಮಾನಸಿಕ ಆರೋಗ್ಯ ಸಂಗಾತಿ. ಇಂದು ನೀವು ಹೇಗೆ ಅನುಭವಿಸುತ್ತಿದ್ದೀರಿ?",
+  ml: "നമസ്കാരം 🌿 ഞാൻ നാലം, നിങ്ങളുടെ മാനസികാരോഗ്യ സഹായി. ഇന്ന് നിങ്ങൾക്ക് എങ്ങനെ തോന്നുന്നു?",
+  mr: "नमस्कार 🌿 मी नालम, तुमचा मानसिक आरोग्य साथीदार. आज तुम्हाला कसं वाटतंय?",
+};
+
 const Chat = () => {
   const navigate = useNavigate();
+  const [language] = useState(() => localStorage.getItem("nalam_language") || "en");
   const [messages, setMessages] = useState<Message[]>([
-    { id: 0, text: "Hi there 🌿 I'm Nalam, your mental health companion. How are you feeling today?", isUser: false },
+    { id: 0, text: languageGreetings[localStorage.getItem("nalam_language") || "en"] || languageGreetings.en, isUser: false },
   ]);
   const [input, setInput] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -50,7 +62,7 @@ const Chat = () => {
         const res = await fetch(`${API_BASE}/api/session/create`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ language: "en" }),
+          body: JSON.stringify({ language }),
         });
         if (res.ok) {
           const data = await res.json();
@@ -95,7 +107,7 @@ const Chat = () => {
         body: JSON.stringify({
           session_id: sessionId,
           message: text,
-          language: "en",
+          language,
           avatar_id: "avatar_001",
           phq_score_current: phqScore,
           gad_score_current: gadScore,

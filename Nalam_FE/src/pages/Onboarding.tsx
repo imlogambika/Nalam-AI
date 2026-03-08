@@ -10,9 +10,22 @@ const moods = ["calm", "happy", "anxious", "sad"] as const;
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem("nalam_language") || "en";
+  });
   const [selectedMood, setSelectedMood] = useState<(typeof moods)[number]>("calm");
   const [step, setStep] = useState(0);
+
+  const handleLanguageChange = (code: string) => {
+    setLanguage(code);
+    localStorage.setItem("nalam_language", code);
+  };
+
+  const handleContinue = () => {
+    localStorage.setItem("nalam_language", language);
+    localStorage.setItem("nalam_mood", selectedMood);
+    navigate("/chat");
+  };
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
@@ -27,7 +40,7 @@ const Onboarding = () => {
           className="absolute top-4 right-0 flex items-center gap-3"
         >
           <ThemeToggle />
-          <LanguageSelector selected={language} onSelect={setLanguage} />
+          <LanguageSelector selected={language} onSelect={handleLanguageChange} />
         </motion.div>
 
         <AnimatePresence mode="wait">
@@ -109,7 +122,7 @@ const Onboarding = () => {
               </div>
 
               <button
-                onClick={() => navigate("/chat")}
+                onClick={handleContinue}
                 className="btn-glow px-8 py-4 text-base font-semibold mt-10"
               >
                 Continue to Chat

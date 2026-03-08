@@ -66,16 +66,24 @@ async def get_chat_response(
     # Append distress detection instruction
     full_system_prompt = system_prompt + SUPPORT_DETECTION_INSTRUCTION
 
+    # Map language code to full name for Gemini
+    language_names = {
+        "en": "English", "hi": "Hindi", "ta": "Tamil", "te": "Telugu",
+        "bn": "Bengali", "kn": "Kannada", "ml": "Malayalam", "mr": "Marathi",
+    }
+    lang_name = language_names.get(language, "English")
+
     # Build context-aware prompt
     user_prompt = f"""
     Session context:
     - PHQ-9 score so far: {phq_score}/27
     - GAD-7 score so far: {gad_score}/21
-    - Language: {language}
+    - Language: {language} ({lang_name})
     - Medical context from books: {rag_context if rag_context else "None available"}
 
     User message: {message}
 
+    IMPORTANT: You MUST respond in {lang_name} language. The "reply" value in your JSON must be written in {lang_name}.
     Remember: respond ONLY with valid JSON containing "reply" and "needs_support" keys.
     """
 
