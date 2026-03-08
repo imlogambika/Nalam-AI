@@ -45,7 +45,7 @@ async def get_chat_response(
 
     try:
         model = genai.GenerativeModel(
-            model_name="gemini-2.5-flash-preview-05-20",
+            model_name="gemini-2.5-flash",
             system_instruction=system_prompt,
         )
         

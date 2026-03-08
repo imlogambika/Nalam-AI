@@ -11,20 +11,13 @@ import VoiceWaveform from "@/components/VoiceWaveform";
 import ParticleBackground from "@/components/ParticleBackground";
 import ThemeToggle from "@/components/ThemeToggle";
 
+const API_BASE = "http://localhost:8000";
+
 type Message = {
   id: number;
   text: string;
   isUser: boolean;
   type?: "text" | "coping" | "crisis";
-};
-
-const crisisKeywords = ["end it all", "don't want to be here", "self harm", "suicide", "kill myself"];
-
-const aiResponses: Record<string, string> = {
-  anxious: "I hear you. Feeling anxious can be overwhelming, but you're not alone. Let me suggest a quick breathing exercise that might help ground you right now. 🌊",
-  stressed: "Stress is your body's way of responding to pressure. Let's work through this together. Would you like to try a grounding technique?",
-  sad: "It takes courage to acknowledge sadness. I'm here with you. Sometimes talking about what's on your mind can help lighten the weight. 💙",
-  okay: "That's good to hear! Even on okay days, it's great to check in with yourself. Is there anything specific you'd like to explore today?",
 };
 
 const Chat = () => {
@@ -38,67 +31,130 @@ const Chat = () => {
   const [showCoping, setShowCoping] = useState(false);
   const [showCrisis, setShowCrisis] = useState(false);
   const [currentMood, setCurrentMood] = useState<"calm" | "anxious" | "sad" | "happy">("calm");
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string>("");
+  const [phqScore, setPhqScore] = useState(0);
+  const [gadScore, setGadScore] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const nextId = useRef(1);
 
+  // Create session on mount
+  useEffect(() => {
+    const createSession = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/session/create`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ language: "en" }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSessionId(data.session_id);
+          console.log("[Nalam] Session created:", data.session_id);
+        } else {
+          console.error("[Nalam] Failed to create session, using fallback");
+          setSessionId(`sess_local_${Date.now()}`);
+        }
+      } catch (err) {
+        console.error("[Nalam] Session creation error:", err);
+        setSessionId(`sess_local_${Date.now()}`);
+      }
+    };
+    createSession();
+  }, []);
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, showCoping, showCrisis]);
+  }, [messages, showCoping, showCrisis, isLoading]);
 
-  const detectCrisis = (text: string) => {
-    return crisisKeywords.some(kw => text.toLowerCase().includes(kw));
+  const mapAvatarState = (state: string): "calm" | "anxious" | "sad" | "happy" => {
+    if (state === "anxious" || state === "stressed") return "anxious";
+    if (state === "sad" || state === "crisis") return "sad";
+    if (state === "happy" || state === "positive") return "happy";
+    return "calm";
   };
 
-  const sendMessage = (text: string) => {
-    if (!text.trim()) return;
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || isLoading) return;
+
     const userMsg: Message = { id: nextId.current++, text, isUser: true };
     setMessages(prev => [...prev, userMsg]);
     setInput("");
     setShowQuickReplies(false);
+    setIsLoading(true);
 
-    if (detectCrisis(text)) {
-      setShowCrisis(true);
-      setCurrentMood("sad");
-      setTimeout(() => {
+    try {
+      const res = await fetch(`${API_BASE}/api/chat/message`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionId,
+          message: text,
+          language: "en",
+          avatar_id: "avatar_001",
+          phq_score_current: phqScore,
+          gad_score_current: gadScore,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`API responded with status ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      // Update scores from backend
+      if (data.phq_score_updated !== undefined) setPhqScore(data.phq_score_updated);
+      if (data.gad_score_updated !== undefined) setGadScore(data.gad_score_updated);
+
+      // Handle crisis response
+      if (data.crisis_detected) {
+        setShowCrisis(true);
+        setCurrentMood("sad");
         setMessages(prev => [...prev, {
           id: nextId.current++,
-          text: "I can sense you're going through something very difficult right now. You are important, and help is available. Please reach out to one of these helplines. 💛",
+          text: data.reply,
           isUser: false,
-          type: "crisis"
+          type: "crisis",
         }]);
-      }, 800);
-      return;
-    }
+        setIsLoading(false);
+        return;
+      }
 
-    setShowCrisis(false);
+      setShowCrisis(false);
 
-    const lower = text.toLowerCase();
-    if (lower.includes("anxious") || lower.includes("worried") || lower.includes("nervous")) {
-      setCurrentMood("anxious");
-    } else if (lower.includes("sad") || lower.includes("depressed") || lower.includes("low")) {
-      setCurrentMood("sad");
-    } else if (lower.includes("happy") || lower.includes("great") || lower.includes("good") || lower.includes("okay")) {
-      setCurrentMood("happy");
-    } else {
-      setCurrentMood("calm");
-    }
+      // Update avatar mood from backend
+      if (data.avatar_state) {
+        setCurrentMood(mapAvatarState(data.avatar_state));
+      }
 
-    setTimeout(() => {
-      const matchedKey = Object.keys(aiResponses).find(k => lower.includes(k));
-      const response = matchedKey
-        ? aiResponses[matchedKey]
-        : "Thank you for sharing that with me. Remember, every feeling is valid. Would you like to try a coping exercise, or would you prefer to keep talking? 🌱";
-
+      // Add AI reply
       setMessages(prev => [...prev, {
         id: nextId.current++,
-        text: response,
+        text: data.reply,
         isUser: false,
       }]);
 
-      if (lower.includes("anxious") || lower.includes("stressed") || lower.includes("sad")) {
+      // Show coping card if backend suggests one
+      if (data.coping_card) {
         setShowCoping(true);
       }
-    }, 1200);
+
+      // Show doctor booking CTA if backend suggests it
+      if (data.book_doctor_cta) {
+        console.log("[Nalam] Doctor booking CTA triggered");
+      }
+
+    } catch (err) {
+      console.error("[Nalam] Chat API error:", err);
+      setMessages(prev => [...prev, {
+        id: nextId.current++,
+        text: "I'm having trouble connecting right now. Please make sure the backend server is running on http://localhost:8000 and try again. 🔄",
+        isUser: false,
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -130,6 +186,22 @@ const Chat = () => {
         {messages.map((msg, i) => (
           <ChatBubble key={msg.id} message={msg.text} isUser={msg.isUser} delay={i === messages.length - 1 ? 0.1 : 0} />
         ))}
+
+        {/* Typing indicator */}
+        {isLoading && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-card/50 backdrop-blur-sm w-fit"
+          >
+            <div className="flex gap-1">
+              <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "150ms" }} />
+              <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "300ms" }} />
+            </div>
+            <span className="text-xs text-muted-foreground">Nalam is thinking...</span>
+          </motion.div>
+        )}
 
         {showCrisis && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
@@ -179,10 +251,12 @@ const Chat = () => {
             onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
             placeholder="Share what's on your mind..."
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 outline-none font-body"
+            disabled={isLoading}
           />
           <button
             onClick={() => sendMessage(input)}
-            className="p-2 rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition-all duration-200 hover:shadow-card"
+            disabled={isLoading}
+            className="p-2 rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition-all duration-200 hover:shadow-card disabled:opacity-50"
           >
             <Send className="w-4 h-4" />
           </button>
