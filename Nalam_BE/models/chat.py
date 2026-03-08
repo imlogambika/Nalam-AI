@@ -41,6 +41,7 @@ class ChatResponse(BaseModel):
     crisis_contacts: Optional[List[CrisisContact]] = None
     dkms_triggered: bool = False
     book_doctor_cta: bool = False
+    needs_support: bool = False
     langfuse_trace_id: Optional[str] = None
 
 

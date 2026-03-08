@@ -145,6 +145,7 @@ async def send_message(request: ChatRequest):
         crisis_detected=False,
         dkms_triggered=dkms_triggered,
         book_doctor_cta=book_cta,
+        needs_support=llm_result.get("needs_support", False),
         langfuse_trace_id=llm_result["trace_id"],
     )
 

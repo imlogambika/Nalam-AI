@@ -22,7 +22,7 @@ async def search_rag(query: str, top_k: int = 3) -> str:
     try:
         # Generate query embedding
         embedding_result = genai.embed_content(
-            model="models/embedding-001",
+            model="models/text-embedding-004",
             content=query,
         )
         query_embedding = embedding_result["embedding"]

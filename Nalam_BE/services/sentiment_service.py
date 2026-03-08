@@ -22,7 +22,7 @@ async def get_sentiment(message: str) -> float:
         return _fallback_sentiment(message)
 
     try:
-        model = genai.GenerativeModel("gemini-2.5-flash-preview-05-20")
+        model = genai.GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(
             f"Rate sentiment 0-1 (0=very negative, 1=very positive). Reply ONLY with number: {message}",
             generation_config=genai.types.GenerationConfig(max_output_tokens=10, temperature=0)

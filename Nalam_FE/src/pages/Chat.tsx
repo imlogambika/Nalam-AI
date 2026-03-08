@@ -5,6 +5,8 @@ import { Mic, Send, LayoutDashboard } from "lucide-react";
 import ChatBubble from "@/components/ChatBubble";
 import CopingCard from "@/components/CopingCard";
 import CrisisSupportCard from "@/components/CrisisSupportCard";
+import SupportActionCard from "@/components/SupportActionCard";
+import PhoneInputModal from "@/components/PhoneInputModal";
 import QuickReplyButtons from "@/components/QuickReplyButtons";
 import AvatarWidget from "@/components/AvatarWidget";
 import VoiceWaveform from "@/components/VoiceWaveform";
@@ -35,6 +37,9 @@ const Chat = () => {
   const [sessionId, setSessionId] = useState<string>("");
   const [phqScore, setPhqScore] = useState(0);
   const [gadScore, setGadScore] = useState(0);
+  const [severity, setSeverity] = useState("minimal");
+  const [showSupportCard, setShowSupportCard] = useState(false);
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const nextId = useRef(1);
 
@@ -65,7 +70,7 @@ const Chat = () => {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, showCoping, showCrisis, isLoading]);
+  }, [messages, showCoping, showCrisis, showSupportCard, isLoading]);
 
   const mapAvatarState = (state: string): "calm" | "anxious" | "sad" | "happy" => {
     if (state === "anxious" || state === "stressed") return "anxious";
@@ -140,9 +145,16 @@ const Chat = () => {
         setShowCoping(true);
       }
 
-      // Show doctor booking CTA if backend suggests it
-      if (data.book_doctor_cta) {
-        console.log("[Nalam] Doctor booking CTA triggered");
+      // Update severity
+      if (data.severity) {
+        setSeverity(data.severity);
+      }
+
+      // Show support action card if Gemini detects distress
+      if (data.needs_support) {
+        setShowSupportCard(true);
+      } else {
+        setShowSupportCard(false);
       }
 
     } catch (err) {
@@ -209,6 +221,19 @@ const Chat = () => {
           </motion.div>
         )}
 
+        {/* Support Action Card — therapist booking + voice call */}
+        {showSupportCard && !showCrisis && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <SupportActionCard
+              sessionId={sessionId}
+              severity={severity}
+              phqScore={phqScore}
+              gadScore={gadScore}
+              onRequestCall={() => setShowPhoneModal(true)}
+            />
+          </motion.div>
+        )}
+
         {showCoping && !showCrisis && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -262,6 +287,21 @@ const Chat = () => {
           </button>
         </div>
       </div>
+      {/* Phone Input Modal */}
+      <PhoneInputModal
+        isOpen={showPhoneModal}
+        onClose={() => setShowPhoneModal(false)}
+        onSubmit={async (phone) => {
+          const res = await fetch(`${API_BASE}/api/call/trigger`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: sessionId, phone_number: phone }),
+          });
+          if (!res.ok) throw new Error("Call trigger failed");
+          const data = await res.json();
+          if (data.status !== "success") throw new Error(data.message);
+        }}
+      />
     </div>
   );
 };
